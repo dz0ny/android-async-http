@@ -105,12 +105,12 @@ public class BinaryHttpResponseHandler extends AsyncHttpResponseHandler {
     // Pre-processing of messages (executes in background threadpool thread)
     //
 
-    protected void sendSuccessMessage(byte[] responseBody) {
-        sendMessage(obtainMessage(SUCCESS_MESSAGE, responseBody));
+    protected void sendSuccessMessage(byte[] responseBody, Header[] headers) {
+        sendMessage(obtainMessage(SUCCESS_MESSAGE, responseBody, headers));
     }
 
     protected void sendFailureMessage(Throwable e, byte[] responseBody) {
-        sendMessage(obtainMessage(FAILURE_MESSAGE, new Object[]{e, responseBody}));
+        sendMessage(obtainMessage(FAILURE_MESSAGE, new Object[]{e, responseBody}, null));
     }
 
     //
@@ -142,7 +142,7 @@ public class BinaryHttpResponseHandler extends AsyncHttpResponseHandler {
     }
 
     // Interface to AsyncHttpRequest
-    void sendResponseMessage(HttpResponse response) {
+    void sendResponseMessage(HttpResponse response, Header[] headers) {
         StatusLine status = response.getStatusLine();
         Header[] contentTypeHeaders = response.getHeaders("Content-Type");
         byte[] responseBody = null;
@@ -177,7 +177,7 @@ public class BinaryHttpResponseHandler extends AsyncHttpResponseHandler {
         if(status.getStatusCode() >= 300) {
             sendFailureMessage(new HttpResponseException(status.getStatusCode(), status.getReasonPhrase()), responseBody);
         } else {
-            sendSuccessMessage(responseBody);
+            sendSuccessMessage(responseBody, headers);
         }
     }
 }

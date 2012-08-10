@@ -18,6 +18,7 @@
 
 package com.loopj.android.http;
 
+import org.apache.http.Header;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,8 +50,9 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
      * at the base of the response string. Override to handle in your
      * own code.
      * @param response the parsed json object found in the server response (if any)
+     * @param headers the Header[] object found in the server response (if any)
      */
-    public void onSuccess(JSONObject response) {}
+    public void onSuccess(JSONObject response, Header[] headers) {}
 
 
     /**
@@ -58,8 +60,9 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
      * at the base of the response string. Override to handle in your
      * own code.
      * @param response the parsed json array found in the server response (if any)
+     * @param headers the Header[] object found in the server response (if any)
      */
-    public void onSuccess(JSONArray response) {}
+    public void onSuccess(JSONArray response, Header[] headers) {}
 
     public void onFailure(Throwable e, JSONObject errorResponse) {}
     public void onFailure(Throwable e, JSONArray errorResponse) {}
@@ -70,10 +73,10 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
     //
 
     @Override
-    protected void sendSuccessMessage(String responseBody) {
+    protected void sendSuccessMessage(String responseBody, Header[] headers) {
         try {
             Object jsonResponse = parseResponse(responseBody);
-            sendMessage(obtainMessage(SUCCESS_JSON_MESSAGE, jsonResponse));
+            sendMessage(obtainMessage(SUCCESS_JSON_MESSAGE, jsonResponse, headers));
         } catch(JSONException e) {
             sendFailureMessage(e, responseBody);
         }
@@ -88,24 +91,25 @@ public class JsonHttpResponseHandler extends AsyncHttpResponseHandler {
     protected void handleMessage(Message msg) {
         switch(msg.what){
             case SUCCESS_JSON_MESSAGE:
-                handleSuccessJsonMessage(msg.obj);
+                handleSuccessJsonMessage(((Response) msg.obj).getResponse(), ((Response) msg.obj).getHeaders());
                 break;
             default:
                 super.handleMessage(msg);
         }
     }
 
-    protected void handleSuccessJsonMessage(Object jsonResponse) {
+    protected void handleSuccessJsonMessage(Object jsonResponse, Header[] headers) {
         if(jsonResponse instanceof JSONObject) {
-            onSuccess((JSONObject)jsonResponse);
+            onSuccess((JSONObject)jsonResponse, headers);
         } else if(jsonResponse instanceof JSONArray) {
-            onSuccess((JSONArray)jsonResponse);
+            onSuccess((JSONArray)jsonResponse, headers);
         } else {
             onFailure(new JSONException("Unexpected type " + jsonResponse.getClass().getName()));
         }
     }
 
-    protected Object parseResponse(String responseBody) throws JSONException {
+
+	protected Object parseResponse(String responseBody) throws JSONException {
         return new JSONTokener(responseBody).nextValue();
     }
 
